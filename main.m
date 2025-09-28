@@ -1,16 +1,15 @@
-%Õë¶Ô10*10ÇøÓòµÄËùÓĞÎÆÀíµÄÖ÷º¯Êı
+%é’ˆå¯¹10*10åŒºåŸŸçš„æ‰€æœ‰çº¹ç†çš„ä¸»å‡½æ•°
 close all;
 clear all;
 
 
-file_path =  '.\1\';% Í¼ÏñÎÄ¼ş¼ĞÂ·¾¶£¬
-cc=colormap(lines(100));
-img_path_list = dir(strcat(file_path,'*.bmp'));%»ñÈ¡¸ÃÎÄ¼ş¼ĞÖĞËùÓĞjpg¸ñÊ½µÄÍ¼Ïñ¡£
-img_num = length(img_path_list);%»ñÈ¡Í¼Ïñ×ÜÊıÁ¿£¬
+file_path =  '.\1\';% å›¾åƒæ–‡ä»¶å¤¹è·¯å¾„ï¼Œ
+img_path_list = dir(strcat(file_path,'*.bmp'));%è·å–è¯¥æ–‡ä»¶å¤¹ä¸­æ‰€æœ‰jpgæ ¼å¼çš„å›¾åƒã€‚
+img_num = length(img_path_list);%è·å–å›¾åƒæ€»æ•°é‡ï¼Œ
 NUMD=zeros(img_num,10);
 Dis1=[];
 step=4;
-for ii = 1:10 %ÖğÒ»¶ÁÈ¡Í¼Ïñ£¬    
+for ii = 1:10 %é€ä¸€è¯»å–å›¾åƒï¼Œ    
     I=imread(strcat(num2str(ii),'.bmp'));
         image_size=size(I);
         dimension=numel(image_size);
@@ -29,8 +28,8 @@ for ii = 1:10 %ÖğÒ»¶ÁÈ¡Í¼Ïñ£¬
     file_path =  strcat(strcat('.\',num2str(ii)),'\');
     if img_num > 0 
         Dis=zeros(floor(H*W/(step*step)),img_num);
-        for jj = 1:img_num %ÖğÒ»¶ÁÈ¡Í¼Ïñ£¬
-            image_name = img_path_list(jj).name;% Í¼ÏñÃû£¬
+        for jj = 1:img_num %é€ä¸€è¯»å–å›¾åƒï¼Œ
+            image_name = img_path_list(jj).name;% å›¾åƒåï¼Œ
             I1 =  imread(strcat(file_path,image_name));
             
             image_size=size(I1);
@@ -65,11 +64,10 @@ for ii = 1:10 %ÖğÒ»¶ÁÈ¡Í¼Ïñ£¬
             NUMD(jj,ii)=Dnum/(nuuu);
         end
     end
+end
 
-
-TT=0.8;
+TT=0.2;
 AA=NUMD;
 AA(NUMD<TT)=1;
 AA(NUMD>=TT)=0;
-AA
 
