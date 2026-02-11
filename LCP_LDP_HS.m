@@ -1,88 +1,101 @@
 function result = LCP_LDP_HS(image)
-    
-[rows, cols, h] = size(image); % »ñÈ¡Í¼ÏñµÄ³ß´ç
-if h==3
-    image =  rgb2gray(image);
-end
-image=double(image);
+    if ndims(image) == 3
+        image = rgb2gray(image);
+    end
+    image = double(image);
+    [rows, cols] = size(image);
 
-LCP_map = zeros(rows-4, cols-4); % ³õÊ¼»¯LDP½á¹ûÍ¼Ïñ
-LDP_map_D = zeros(rows-4, cols-4); % ³õÊ¼»¯LDP½á¹ûÍ¼Ïñ
-LDP_map = zeros(rows-4, cols-4); % ³õÊ¼»¯LDP½á¹ûÍ¼Ïñ
-HS_map = zeros(rows-4, cols-4); % ³õÊ¼»¯LDP½á¹ûÍ¼Ïñ
+    if rows < 5 || cols < 5
+        error('Input image must be at least 5x5 pixels.');
+    end
 
-% ¼ÆËãÍ¼ÏñµÄÌÝ¶È
-[Ix, Iy] = gradient(image); 
-% ¼ÆËãÌÝ¶ÈµÄÉ¢¶È£¨¹þÃÜ¶ÙÉ¢¶È£©
-divV = Ix + Iy;
+    valid_r = rows - 4;
+    valid_c = cols - 4;
 
-% ±éÀúÃ¿¸öÏñËØµã£¨Ìø¹ý±ß½çÏñËØ£©
-for x = 3:rows-2
-    for y = 3:cols-2
-        % »ñÈ¡ÖÐÐÄÏñËØ I_c
-        I_c = image(x, y);
-        % »ñÈ¡5¡Á5´°¿ÚÖÐµÄÖÐÐÄÏñËØµÄ8¸öÏàÁÚÏñËØµãµÄ×ø±ê
-        neighbors = [
-            x-1, y-1; x-1, y; x-1, y+1;
-            x, y+1; x+1, y+1; x+1, y; x+1, y-1;
-            x, y-1
-        ]; 
+    LCP_map = zeros(valid_r, valid_c);
+    LDP_map_D = zeros(valid_r, valid_c); % binary count (0ï½ž8)
+    LDP_map = zeros(valid_r, valid_c);   % weighted value
+    HS_map = zeros(valid_r, valid_c);
 
-        %¶¨ÒåÐÇ×´ÉäÏßµÄ8¸ö·½Ïò Ïò8¸ö·½Ïò¼ÆËã»Ò¶ÈÖÐÐÄ²î·Ö?I_j
-        diffs = [
-            I_c + image(x-2, y-2) - 2*image(x-1, y-1); % ÉÏ×ó
-            I_c + image(x-2, y) - 2*image(x-1, y);   % ÉÏ
-            I_c + image(x-2, y+2) - 2*image(x-1, y+1); % ÉÏÓÒ
-            I_c + image(x, y+2) - 2*image(x, y+1);   % ÓÒ
-            I_c + image(x+2, y+2) - 2*image(x+1, y+1); % ÏÂÓÒ
-            I_c + image(x+2, y) - 2*image(x+1, y);   % ÏÂ
-            I_c + image(x+2, y-2) - 2*image(x+1, y-1); % ÏÂ×ó
-            I_c + image(x, y-2) -  2*image(x, y-1)  % ×ó
-        ];
-        con = diffs > 0;        
-        % ¼ÆËã×ÜµÄ»Ò¶È±ä»¯
-        LCP = sum(con);          
-        %´æ´¢µ±Ç°ÏñËØµÄLDPÖµ
-        LCP_map(x-2, y-2) = LCP;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
-        % ¶¨ÒåÐÇ×´ÉäÏßµÄ8¸ö·½Ïò Ïò8¸ö·½Ïò¼ÆËã»Ò¶ÈÖÐÐÄ²î·Ö
-        diffs = [
-            image(x-2, y-2) - I_c; % ÉÏ×ó
-            image(x-2, y) - I_c;   % ÉÏ
-            image(x-2, y+2) - I_c; % ÉÏÓÒ
-            image(x, y+2) - I_c;   % ÓÒ
-            image(x+2, y+2) - I_c; % ÏÂÓÒ
-            image(x+2, y) - I_c;   % ÏÂ
-            image(x+2, y-2) - I_c; % ÏÂ×ó
-            image(x, y-2) - I_c  % ×ó
-        ]/2;
-        total_diff = sum(diffs>0);     
-        if I_c ~= 0  %-4~4*255
-            LDP = sum(diffs)/I_c + 4;%ÎªÁË±£Ö¤ºóÐø¹éÒ»»¯£¬½«Öµ+4±£Ö¤ÕýÊý¡£
-        else
-            LDP = 256;
-        end 
-        % ´æ´¢µ±Ç°ÏñËØµÄLDPÖµ
-        LDP_map_D(x-2, y-2) = total_diff;
-        LDP_map(x-2, y-2) = LDP;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5        
-        % ³õÊ¼»¯¹þÃÜ¶ÙÉ¢¶ÈµÄ¾ÛºÏ£¨·¢É¢£©ÊýÁ¿
-        HS = 0;
-        for i = 1:size(neighbors, 1)           
-            if divV(neighbors(i,1),neighbors(i,2)) < 0
-                HS = HS + 1; % ¾ÛºÏ
+    [Ix, Iy] = gradient(image);
+    [Ixx, ~] = gradient(Ix);
+    [~, Iyy] = gradient(Iy);
+    divV = Ixx + Iyy;
+
+    Ic = image(3:end-2, 3:end-2);  % (valid_r x valid_c)
+
+    dirs = [-2,-2; -2,0; -2,2; ...
+             0, 2;  2,2;  2,0; ...
+             2,-2;  0,-2];  % 8 directions
+
+    N = valid_r * valid_c;
+    diffs_LCP = zeros(8, N);
+    diffs_LDP = zeros(8, N);
+
+    for k = 1:8
+        dx = dirs(k,1); dy = dirs(k,2);
+        far = image(3+dx : end-2+dx, 3+dy : end-2+dy);
+        near = image(3+dx/2 : end-2+dx/2, 3+dy/2 : end-2+dy/2);
+        
+        diffs_LCP(k, :) = Ic(:)' + far(:)' - 2*near(:)';
+        diffs_LDP(k, :) = (far(:)' - Ic(:)') / 2;
+    end
+
+    LCP_vals = sum(diffs_LCP > 0, 1);  % 1 x N
+    LCP_map = reshape(LCP_vals, valid_r, valid_c);
+
+    total_binary = sum(diffs_LDP > 0, 1);
+    LDP_map_D = reshape(total_binary, valid_r, valid_c);
+    sum_diffs_vec = sum(diffs_LDP, 1);  % 1Ã—N
+
+    kernel_8 = ones(3); 
+    kernel_8(2,2) = 0;  
+    neighbor_sum_full = imfilter(image, kernel_8, 'replicate'); % same size as image
+    neighbor_sum_center = neighbor_sum_full(3:end-2, 3:end-2);   % [valid_r Ã— valid_c]
+    Iref_map = neighbor_sum_center / 8;               
+
+    Ic_vec = Ic(:);                  % NÃ—1
+    Iref_vec = Iref_map(:);          % NÃ—1
+    sum_diffs_vec = sum_diffs_vec';  % è½¬ä¸º NÃ—1
+
+    LDP_vec = zeros(N, 1);
+
+    idx1 = (Ic_vec ~= 0);
+    LDP_vec(idx1) = (sum_diffs_vec(idx1) ./ Ic_vec(idx1)) + 4;
+
+    idx2 = (~idx1) & (Iref_vec ~= 0);
+    LDP_vec(idx2) = sum_diffs_vec(idx2) ./ Iref_vec(idx2); 
+
+    LDP_map = reshape(LDP_vec, valid_r, valid_c);
+
+    neigh = [-1,-1; -1,0; -1,1; 0,1; 1,1; 1,0; 1,-1; 0,-1];
+    HS_vals = zeros(1, N);
+    cnt = 1;
+    for x = 3:rows-2
+        for y = 3:cols-2
+            hs_count = 0;
+            for k = 1:8
+                nx = x + neigh(k,1);
+                ny = y + neigh(k,2);
+                if divV(nx, ny) < 0
+                    hs_count = hs_count + 1;
+                end
             end
+            HS_vals(cnt) = hs_count;
+            cnt = cnt + 1;
         end
-        % ½«HS´æ´¢ÔÚHS_mapÖÐ
-        HS_map(x-2, y-2) = HS;         
-     end
-end    
+    end
+    HS_map = reshape(HS_vals, valid_r, valid_c);
 
-bins= 8; 
-result(1,:)=hist(LCP_map(:),0:bins);
-result(2,:) = accumarray(LDP_map_D(:)+1, LDP_map(:), [9 1]);
-result(3,:)=hist(HS_map(:),0:bins);
-% %¹éÒ»»¯µ½0-1£º
-result(1,:)=result(1,:)/sum(result(1,:));
-result(2,:)=result(2,:)/sum(result(2,:));
-result(3,:)=result(3,:)/sum(result(3,:));
+    bins_edges = 0:8;  % 9 bins: 0,1,...,8
+
+    h1 = histcounts(LCP_map(:), [bins_edges, Inf]);
+    h2 = accumarray(LDP_map_D(:) + 1, LDP_map(:), [9, 1]);  % LDP_map_D âˆˆ [0,8]
+    h3 = histcounts(HS_map(:), [bins_edges, Inf]);
+
+    h1 = h1 / sum(h1 + eps);
+    h2 = h2 / sum(h2 + eps);
+    h3 = h3 / sum(h3 + eps);
+
+    result = [h1(:)', h2(:)', h3(:)'];  
+end
