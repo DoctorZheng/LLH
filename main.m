@@ -66,8 +66,9 @@ for ii = 1:10 %逐一读取图像，
     end
 end
 
-TT=0.2;
+TT=0.07;
 AA=NUMD;
 AA(NUMD<TT)=1;
 AA(NUMD>=TT)=0;
+
 
